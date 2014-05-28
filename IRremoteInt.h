@@ -162,6 +162,10 @@
 #define JVC_ZERO_SPACE 550
 #define JVC_RPT_LENGTH 60000
 
+#define HITACHI_BIT_MARK 400
+#define HITACHI_ONE_MARK 1200
+#define HITACHI_ZERO_MARK 500
+
 #define SHARP_BITS 15
 #define DISH_BITS 16
 
@@ -216,6 +220,7 @@ extern volatile irparams_t irparams;
 #define MIN_RC6_SAMPLES 1
 #define PANASONIC_BITS 48
 #define JVC_BITS 16
+#define HITACHI_BITS 180
 
 
 
