@@ -1,3 +1,10 @@
+I fork Shirriff's library for my hitachi IR dump.
+
+
+
+============ORIGINAL COPYRIGHT==================================================
+
+
 This is the IRremote library for the Arduino.
 
 To download from github (http://github.com/shirriff/Arduino-IRremote), click on the "Downloads" link in the upper right, click "Download as zip", and get a zip file.  Unzip it and rename the directory shirriff-Arduino-IRremote-nnn to IRremote
