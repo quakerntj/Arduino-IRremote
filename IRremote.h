@@ -62,6 +62,7 @@ public:
   void enableIRIn();
   void resume();
   long decodeHitachi(decode_results *results);
+  long decodeHitachi2(decode_results *results);
   long decodeRaw(decode_results *results);
 private:
   // These are called by decode

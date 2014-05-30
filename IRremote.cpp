@@ -325,8 +325,8 @@ ISR(TIMER_INTR_NAME)
       if (irparams.timer < GAP_TICKS) {
         // Not big enough to be a gap.
         irparams.timer = 0;
-      }
-      else {
+      } else
+      {
         // gap just ended, record duration and start recording transmission
         irparams.rawlen = 0;
         irparams.rawbuf[irparams.rawlen++] = irparams.timer;
@@ -924,6 +924,55 @@ long IRrecv::decodeHitachi(decode_results *results) {
     if (results->rawlen != 180) {
         goto error;
     }
+    // decode address
+    for (int offset = 0; offset < results->rawlen; offset++) {
+        value = results->rawbuf[offset];
+        if (value > 26 || value < 22) {
+            Serial.print(0, DEC);
+        } else if (value > 11 || value < 9) {
+            Serial.print(1, DEC);
+        } else {
+            Serial.println("");
+            Serial.print("Error on match 0/1 mark: off=");
+            Serial.print(offset, DEC);
+            Serial.print(" val=");
+            Serial.println(value, DEC);
+            return DECODED;
+        }
+
+        offset++;
+        value = results->rawbuf[offset];
+        if (value < 6 || value > 10) {
+            Serial.println("");
+            Serial.print("Error on match bit space: off=");
+            Serial.print(offset, DEC);
+            Serial.print(" val=");
+            Serial.println(value, DEC);
+            return DECODED;
+        }
+    }
+    //Serial.println("");
+    results->decode_type = HITACHI;
+    results->bits = HITACHI_BITS;
+
+    return DECODED;
+
+error:
+    // Throw away and start over
+    resume();
+    return ERR;
+}
+
+long IRrecv::decodeHitachi2(decode_results *results) {
+    results->rawbuf = irparams.rawbuf;
+    results->rawlen = irparams.rawlen;
+    if (irparams.rcvstate != STATE_STOP) {
+        return ERR;
+    }
+
+    unsigned int value = 0;
+    int offset = 0;
+
     // decode address
     for (int offset = 0; offset < results->rawlen; offset++) {
         value = results->rawbuf[offset];
