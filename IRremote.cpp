@@ -921,11 +921,26 @@ long IRrecv::decodeHitachi(decode_results *results) {
     unsigned int value = 0;
     int offset = 0;
 
-    if (results->rawlen != 180) {
-        goto error;
+    // skip first long SPACE
+    offset++;
+
+    // Hitachi signature
+    value = results->rawbuf[offset++];
+    if (value >= 64 || value <= 70) {
+        value = results->rawbuf[offset++];
+        if (value >= 30 || value <= 36) {
+            value = results->rawbuf[offset++];
+            if (value >= 6 || value <= 10) {
+                goto confirmed;
+            }
+        }
     }
+    Serial.println("Error in signature");
+
+confirmed:
+
     // decode address
-    for (int offset = 0; offset < results->rawlen; offset++) {
+    for (offset = 4; offset < results->rawlen; offset++) {
         value = results->rawbuf[offset];
         if (value > 26 || value < 22) {
             Serial.print(0, DEC);
@@ -973,8 +988,25 @@ long IRrecv::decodeHitachi2(decode_results *results) {
     unsigned int value = 0;
     int offset = 0;
 
+    // skip first long SPACE
+
+    // Hitachi signature
+    value = results->rawbuf[1];
+    if (value >= 66 || value <= 68) {
+        value = results->rawbuf[2];
+        if (value >= 32 || value <= 34) {
+            value = results->rawbuf[3];
+            if (value >= 6 || value <= 10) {
+                goto confirmed;
+            }
+        }
+    }
+    goto error;
+
+confirmed:
+
     // decode address
-    for (int offset = 0; offset < results->rawlen; offset++) {
+    for (int offset = 4; offset < results->rawlen; offset++) {
         value = results->rawbuf[offset];
         if (value > 26 || value < 22) {
             Serial.print(0, DEC);

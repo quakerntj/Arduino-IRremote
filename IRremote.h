@@ -31,7 +31,7 @@ public:
   unsigned int * hitachiAddress; // This is only used for decoding Panasonic data
   unsigned long value; // Decoded value
   int bits; // Number of bits in decoded value
-  volatile unsigned int *rawbuf; // Raw intervals in .5 us ticks
+  volatile unsigned char *rawbuf; // Raw intervals in .5 us ticks
   int rawlen; // Number of records in rawbuf.
 };
 
@@ -114,7 +114,7 @@ public:
 // Some useful constants
 
 #define USECPERTICK 50  // microseconds per clock interrupt tick
-#define RAWBUF 550 // Length of raw duration buffer.  origin 100, 550 for Hitachi.
+#define RAWBUF 1000 // Length of raw duration buffer.  origin 100, 550 for Hitachi.
 
 // Marks tend to be 100us too long, and spaces 100us too short
 // when received due to sensor lag.
