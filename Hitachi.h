@@ -1,3 +1,6 @@
+// Copyright for QuakerNTj 2014
+// https://github.com/quakerntj
+
 #ifndef HITACHI_AC_H
 #define HITACHI_AC_H
 
