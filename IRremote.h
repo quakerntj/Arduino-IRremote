@@ -30,6 +30,7 @@ public:
   unsigned int panasonicAddress; // This is only used for decoding Panasonic data
   unsigned int * hitachiAddress; // This is only used for decoding Panasonic data
   unsigned long value; // Decoded value
+  unsigned char * valueArray; // Decoded value which has many bits.
   int bits; // Number of bits in decoded value
   volatile unsigned char *rawbuf; // Raw intervals in .5 us ticks
   int rawlen; // Number of records in rawbuf.
@@ -63,6 +64,7 @@ public:
   void resume();
   long decodeHitachi(decode_results *results);
   long decodeHitachi2(decode_results *results);
+  long decodeHitachi3(decode_results *results);
   long decodeRaw(decode_results *results);
 private:
   // These are called by decode

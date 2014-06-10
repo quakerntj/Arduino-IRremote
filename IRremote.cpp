@@ -15,9 +15,9 @@
  *
  * JVC and Panasonic protocol added by Kristian Lauszus (Thanks to zenwheel and other people at the original blog post)
  */
-
 #include "IRremote.h"
 #include "IRremoteInt.h"
+#include "Hitachi.h"
 
 // Provides ISR
 #include <avr/interrupt.h>
@@ -392,6 +392,12 @@ int IRrecv::decode(decode_results *results) {
     return ERR;
   }
 #ifdef DEBUG
+  Serial.println("Attempting Hitachi decode");
+#endif 
+  if (decodeHitachi3(results)) {
+    return DECODED;
+  }
+#ifdef DEBUG
   Serial.println("Attempting NEC decode");
 #endif
   if (decodeNEC(results)) {
@@ -437,12 +443,6 @@ int IRrecv::decode(decode_results *results) {
     Serial.println("Attempting JVC decode");
 #endif 
     if (decodeJVC(results)) {
-        return DECODED;
-    }
-#ifdef DEBUG
-    Serial.println("Attempting Hitachi decode");
-#endif 
-    if (decodeHitachi(results)) {
         return DECODED;
     }
   // decodeHash returns a hash on any input.
@@ -1041,6 +1041,63 @@ confirmed:
 error:
     // Throw away and start over
     resume();
+    return ERR;
+}
+
+long IRrecv::decodeHitachi3(decode_results *results) {
+    unsigned int value = 0;
+    int offset = 1;  // skip first long SPACE
+    unsigned long data = 0;
+    unsigned int bitcounter = 0;
+    // decode address
+    unsigned char * array = NULL;
+    unsigned char * ptr = NULL;
+
+    // Hitachi signature
+    if (!MATCH_MARK(results->rawbuf[offset++], HITACHI_HDR_MARK))
+        return ERR;
+    if (!MATCH_MARK(results->rawbuf[offset++], HITACHI_HDR_SPACE))
+        return ERR;
+    // Skip HITACHI_BIT_MARK
+    offset++;
+
+    if (results->valueArray != NULL)
+        delete [] results->valueArray;
+    array = new unsigned char [HITACHI_BITS / 8];
+    ptr = array;
+    
+    for (; offset < results->rawlen;) {
+        if ((offset % 2) == 1) {
+            // Skip HITACHI_BIT_MARK
+            offset++;
+        } else {
+            if (MATCH_SPACE(results->rawbuf[offset], HITACHI_ONE_SPACE))
+                data = (data << 1) | 1;
+            else if (MATCH_SPACE(results->rawbuf[offset], HITACHI_ZERO_SPACE))
+                data = (data << 1);
+            else
+                goto error;
+            offset++;
+            bitcounter++;
+
+            if (bitcounter == 8) {
+                *ptr++ = data;
+                bitcounter = 0;
+                data = 0;
+            }
+        }
+    }
+    results->decode_type = HITACHI;
+    results->bits = HITACHI_BITS;
+    results->valueArray = array;
+
+    return DECODED;
+
+error:
+    Serial.print("Decode Hitachi fail at bit ");
+    Serial.println(offset, DEC);
+    if (array != NULL)
+        delete array;
     return ERR;
 }
 
