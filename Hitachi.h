@@ -5,18 +5,12 @@
 #define HITACHI_AC_H
 
 enum {
-    HELP_SLEEP_TIME_LOW_MASK = 0xFF,
-    HELP_SLEEP_TIME_HIGH_MASK = 0xE0,
-    
-};
-
-enum {
     CLOSE_COUNTDOWN_TIME_LOW_MASK = 0x0F,
     CLOSE_COUNTDOWN_TIME_HIGH_MASK = 0xFE,
 };
     
 
- enum {
+enum {
     // not open case.
     KEYPAD_POWER = 0xC8,
     KEYPAD_WIND_SPEED = 0x42,
@@ -38,6 +32,7 @@ enum {
     KEYPAD_BRIGHTNESS = 0x93,
     KEYPAD_POWER_RETURN = 0xD9,
 
+    KEYPAD_BYTE = 12,
     KEYPAD_MASK = 0xFF,
 };
 
@@ -48,6 +43,8 @@ enum {
     WIND_LR_CENTER = 0xC0,
     WIND_LR_L1 = 0x20,
     WIND_LR_L2 = 0xA0,  // larger angel
+
+    WIND_LR_BYTE = 36,
     WIND_LR_MASK = 0xE0,
 };
 
@@ -71,6 +68,8 @@ enum {
     POWER_RETURN_ON = 0x08,
     POWER_RETURN_OFF = 0x00,
     POWER_RETURN_MASK = 0x08,
+
+    WBKMP_BYTE = 38,
 };
 
 enum {
@@ -86,22 +85,33 @@ enum {
     WIND_SPEED_2 = 0x04,
     WIND_SPEED_1 = 0x08,
     WIND_MASK = 0xE0,
+
+    FUNCTION_BYTE = 26,
 };
 
 enum {
     SCHEDULE_EVERY_DAY = 0x01,
     SCHEDULE_OPEN = 0x04,
     SCHEDULE_CLOSE = 0x08,
-    SCHEDULE_MASK = 0x0D,
-    SCHEDULE_OPEN_TIME_MASK_HIGH = 0xE0,  // byte 22
-    SCHEDULE_OPEN_TIME_MASK_LOW = 0xFF,  // byte 24
-    SCHEDULE_CLOSE_TIME_MASK_HIGH = 0xE0,  // byte 18
-    SCHEDULE_CLOSE_TIME_MASK_LOW = 0xFF,  // byte 20
+    SCHEDULE_BYTE = 24,
+    SCHEDULE_MASK = 0x0F,
+
+    SCHEDULE_CLOSE_LOW_BYTE = 18,
+    SCHEDULE_CLOSE_TIME_MASK_LOW = 0xFF,  // byte 18
+    SCHEDULE_CLOSE_HIGH_BYTE = 20,
+    SCHEDULE_CLOSE_TIME_MASK_HIGH = 0xE0,  // byte 20
+
+    SCHEDULE_OPEN_LOW_BYTE = 22,
+    SCHEDULE_OPEN_TIME_MASK_LOW = 0xFF,  // byte 22
+    SCHEDULE_OPEN_HIGH_BYTE = 24,
+    SCHEDULE_OPEN_TIME_MASK_HIGH = 0xE0,  // byte 24
 };
 
 enum {
     POWER_ON = 0x08,
     POWER_OFF = 0x00,
+
+    POWER_BYTE = 28,
     POWER_MASK = 0x08,
 };
 
@@ -115,19 +125,24 @@ struct HitachiAC {
     unsigned char temperaturei;  // 15
     unsigned char sleep;  // 16
     unsigned char sleepi;  // 17
-    unsigned char sheduleCloseL;  // 18  Count down
-    unsigned char sheduleCloseLi;  // 19
-    unsigned char sheduleCloseH;  // 20
-    unsigned char sheduleCloseHi;  // 21
-    unsigned char sheduleOpenL;  // 22  Count down
-    unsigned char sheduleOpenLi;  // 23
-    unsigned char sheduleOpenH;  // 24 With other Flags
-    unsigned char sheduleOpenHi;  // 25
+    unsigned char scheduleCloseL;  // 18  Count down
+    unsigned char scheduleCloseLi;  // 19
+    unsigned char scheduleCloseH;  // 20
+    unsigned char scheduleCloseHi;  // 21
+    unsigned char scheduleOpenL;  // 22  Count down
+    unsigned char scheduleOpenLi;  // 23
+    unsigned char scheduleOpenH;  // 24 With other Flags
+    unsigned char scheduleOpenHi;  // 25
     unsigned char function;  // 26
     unsigned char functioni;  // 27
     unsigned char power;  // 28
     unsigned char poweri;  // 29
-    unsigned char unknownX[6];
+    unsigned char day;  // 30
+    unsigned char dayi;  // 31
+    unsigned char month;  // 32
+    unsigned char monthi;  // 33
+    unsigned char unknown2;  // 34  0x01
+    unsigned char unknown2i;  // 35  0xFE
     unsigned char windLR;  // 36
     unsigned char windLRi;  // 37
     unsigned char wbm;  // 38  Only control swinging or not.  Can't specify an angel.
@@ -169,15 +184,48 @@ union HitachiACUnion {
         }
     }
 
-    void setTime(int hour, int min) {
-        unsigned int time = min + hour * 60;
-        setData(42, 0, 0xFF, time & 0xFF);
-        setData(43, 0, 0x07, time >> 8);
+    void updateCurrentTime() {
+        // get date
+        //setDate(month, day, hour, min);
     }
 
-    // Only can set one byte. Do data bit reverse inside.
-    void setData(int byteIdx, int bitOffset, unsigned char bitmask_, unsigned char out_) {
-        unsigned char bitmask = bitReverse(bitmask_);
+    void send() {
+        updateCurrentTime();
+    }
+
+    void copyFrom(HitachiACUnion temp) {
+        memcpy(data, temp.data, sizeof(data));
+    }
+
+    int setDate(int month, int day, int hour, int min) {
+        // Validate date.
+        if (month > 12 || month < 1 || day < 1)
+            return -1;
+        // Month has four bytes, ABCD.  By Karnaugh map, (A xor D) ? 30 : 31;
+        const int days = (((month & 0x8) >> 3) ^ (month & 0x1)) ? 30 : 31;
+        if (month == 2) {
+            if (days > 29)
+                return -1;
+        } else {
+            if (day > days)
+                return -1;
+        }
+        setData(30, 0, 0xFF, month);
+        setData(32, 0, 0xFF, day);
+        return 0;
+    }
+
+    int setTime(int hour, int min) {
+        if (hour > 23 || hour < 0 || min > 59 || min < 0)
+            return -1;
+        unsigned int time = min + hour * 60;
+        setData(40, 0, 0xFF, time & 0xFF);
+        setData(42, 0, 0x07, time >> 8);
+        return 0;
+    }
+
+    // Only can set one byte. Do data bit reverse inside.  Used for data in integer.
+    void setData(int byteIdx, int bitOffset, unsigned char bitmask, unsigned char out_) {
         unsigned char out = bitReverse(out_);
         const int idx = byteIdx - 1;
         unsigned char tmp = data[idx];
