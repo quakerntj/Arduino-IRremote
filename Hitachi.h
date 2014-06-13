@@ -4,6 +4,12 @@
 #ifndef HITACHI_AC_H
 #define HITACHI_AC_H
 
+/**
+ * MASK has already shifted and offseted.
+ * For data which is more than 8 byte, SHIFT indicate how to cut the date into half.
+ * OFFSET is the position starting to put data from the MSB of bit-reversed byte.
+**/
+
 enum {
     CLOSE_COUNTDOWN_TIME_LOW_MASK = 0x0F,
     CLOSE_COUNTDOWN_TIME_HIGH_MASK = 0xFE,
@@ -91,20 +97,28 @@ enum {
 
 enum {
     SCHEDULE_EVERY_DAY = 0x01,
+    SCHEDULE_SLEEP = 0x02,
     SCHEDULE_OPEN = 0x04,
     SCHEDULE_CLOSE = 0x08,
     SCHEDULE_BYTE = 24,
-    SCHEDULE_MASK = 0x0F,
+    SCHEDULE_MASK = 0x0F,  // No need to use
+
+    SCHEDULE_SLEEP_LOW_BYTE = 16,
+    SCHEDULE_SLEEP_LOW_MASK = 0xFF,
+    SCHEDULE_SLEEP_HIGH_BYTE = 18,
+    SCHEDULE_SLEEP_HIGH_MASK = 0xE0,
 
     SCHEDULE_CLOSE_LOW_BYTE = 18,
-    SCHEDULE_CLOSE_TIME_MASK_LOW = 0xFF,  // byte 18
+    SCHEDULE_CLOSE_LOW_MASK = 0x0E,
+    SCHEDULE_CLOSE_LOW_OFFSET = 4,
     SCHEDULE_CLOSE_HIGH_BYTE = 20,
-    SCHEDULE_CLOSE_TIME_MASK_HIGH = 0xE0,  // byte 20
+    SCHEDULE_CLOSE_HIGH_MASK = 0xFF,
+    SCHEDULE_CLOSE_HIGH_SHIFT = 3,
 
     SCHEDULE_OPEN_LOW_BYTE = 22,
-    SCHEDULE_OPEN_TIME_MASK_LOW = 0xFF,  // byte 22
+    SCHEDULE_OPEN_LOW_MASK = 0xFF,
     SCHEDULE_OPEN_HIGH_BYTE = 24,
-    SCHEDULE_OPEN_TIME_MASK_HIGH = 0xE0,  // byte 24
+    SCHEDULE_OPEN_HIGH_MASK = 0xE0,
 };
 
 enum {
@@ -115,123 +129,108 @@ enum {
     POWER_MASK = 0x08,
 };
 
+enum {
+    TEMPERATURE_MASK = 0x3F;
+    TEMPERATURE_OFFSET = 3;
+    TEMPERATURE_BYTE = 14;
+};
+
+enum {
+    DATA_MONTH_BYTE = 30,
+    DATA_MONTH_MASK = 0xFF,
+    DATA_DAY_BYTE = 32,
+    DATA_DAY_MASK = 0xFF,
+    TIME_HIGH_BYTE = 40,
+    TIME_HIGH_MASK = 0xFF,
+    TIME_LOW_BYTE = 42,
+    TIME_LOW_MASK = 0xFF,
+};
+    
+
 struct HitachiAC {
-    unsigned char unknown[8];
-    unsigned char unknown1;  // 10
-    unsigned char unknown1i;  // 11
-    unsigned char keypad;  // 12
-    unsigned char keypadi;  // 13
-    unsigned char temperature;  // 14
-    unsigned char temperaturei;  // 15
-    unsigned char sleep;  // 16
-    unsigned char sleepi;  // 17
-    unsigned char scheduleCloseL;  // 18  Count down
-    unsigned char scheduleCloseLi;  // 19
-    unsigned char scheduleCloseH;  // 20
-    unsigned char scheduleCloseHi;  // 21
-    unsigned char scheduleOpenL;  // 22  Count down
-    unsigned char scheduleOpenLi;  // 23
-    unsigned char scheduleOpenH;  // 24 With other Flags
-    unsigned char scheduleOpenHi;  // 25
-    unsigned char function;  // 26
-    unsigned char functioni;  // 27
-    unsigned char power;  // 28
-    unsigned char poweri;  // 29
-    unsigned char day;  // 30
-    unsigned char dayi;  // 31
-    unsigned char month;  // 32
-    unsigned char monthi;  // 33
-    unsigned char unknown2;  // 34  0x01
-    unsigned char unknown2i;  // 35  0xFE
-    unsigned char windLR;  // 36
-    unsigned char windLRi;  // 37
-    unsigned char wbm;  // 38  Only control swinging or not.  Can't specify an angel.
-    unsigned char wbmi;  // 39
-    unsigned char timeH;  // 40  TOTAL 11bits.  The minutes of a day
-    unsigned char timeHi;  // 41
-    unsigned char timeL;  // 42
-    unsigned char timeLi;  // 43
+    uint8 unknown[8];
+    uint8 unknown1;  // 10
+    uint8 unknown1i;  // 11
+    uint8 keypad;  // 12
+    uint8 keypadi;  // 13
+    uint8 temperature;  // 14
+    uint8 temperaturei;  // 15
+    uint8 scheduleSleepL;  // 16
+    uint8 scheduleSleepLi;  // 17
+    uint8 scheduleSleepHCloseL;  // 18  Count down
+    uint8 scheduleSleepHCloseLi;  // 19
+    uint8 scheduleCloseH;  // 20
+    uint8 scheduleCloseHi;  // 21
+    uint8 scheduleOpenL;  // 22  Count down
+    uint8 scheduleOpenLi;  // 23
+    uint8 scheduleOpenH;  // 24 With other Flags
+    uint8 scheduleOpenHi;  // 25
+    uint8 function;  // 26
+    uint8 functioni;  // 27
+    uint8 power;  // 28
+    uint8 poweri;  // 29
+    uint8 day;  // 30
+    uint8 dayi;  // 31
+    uint8 month;  // 32
+    uint8 monthi;  // 33
+    uint8 unknown2;  // 34  0x01
+    uint8 unknown2i;  // 35  0xFE
+    uint8 windLR;  // 36
+    uint8 windLRi;  // 37
+    uint8 wbm;  // 38  Only control swinging or not.  Can't specify an angel.
+    uint8 wbmi;  // 39
+    uint8 timeH;  // 40  TOTAL 11bits.  The minutes of a day
+    uint8 timeHi;  // 41
+    uint8 timeL;  // 42
+    uint8 timeLi;  // 43
 };
 
 // bitreverse do MSB->LSB.  For example 10011111 -> 11111001
-unsigned char bitReverse(register unsigned char x) {
+uint8 bitReverse(register uint8 x) {
     x = (((x & 0xaa) >> 1) | ((x & 0x55) << 1));
     x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
     return((x >> 4) | (x << 4));
 }
 
 union HitachiACUnion {
-    unsigned char data[43];
+    uint8 data[43];
     struct HitachiAC code;
 
-    HitachiACUnion() {
-        // do initial
-        data[0] = 0x80;
-        data[1] = 0x08;
-        data[2] = 0x00;
-        data[3] = 0x02;
-        data[4] = 0xFD;
-        data[5] = 0xFF;
-        data[6] = 0x00;
-        data[7] = 0x33;
-        data[8] = 0xCC;
+    HitachiACUnion();
 
-        for (int i = 9; i < sizeof(data); i++) {
-            if (i % 0 == 0)
-                i = 0x0;
-            else
-                i = 0xFF;
-        }
-    }
+    int setFunction(uint8 function);
+    int setTemperature(uint8 degree);
 
-    void updateCurrentTime() {
-        // get date
-        //setDate(month, day, hour, min);
-    }
 
-    void send() {
-        updateCurrentTime();
-    }
+    /**
+     * After modify all the bytes (except the date & time).  Call this to send.
+     * send() will not verify all byte's consistence. Please be careful.
+    **/
+    int send();
 
-    void copyFrom(HitachiACUnion temp) {
-        memcpy(data, temp.data, sizeof(data));
-    }
+    /**
+     * Create a HitachiACUnion by a template.
+    **/
+    void copyFrom(HitachiACUnion temp);
 
-    int setDate(int month, int day, int hour, int min) {
-        // Validate date.
-        if (month > 12 || month < 1 || day < 1)
-            return -1;
-        // Month has four bytes, ABCD.  By Karnaugh map, (A xor D) ? 30 : 31;
-        const int days = (((month & 0x8) >> 3) ^ (month & 0x1)) ? 30 : 31;
-        if (month == 2) {
-            if (days > 29)
-                return -1;
-        } else {
-            if (day > days)
-                return -1;
-        }
-        setData(30, 0, 0xFF, month);
-        setData(32, 0, 0xFF, day);
-        return 0;
-    }
+    /**
+     * Set the date & time by system time.
+    **/
+    void updateCurrentTime();
 
-    int setTime(int hour, int min) {
-        if (hour > 23 || hour < 0 || min > 59 || min < 0)
-            return -1;
-        unsigned int time = min + hour * 60;
-        setData(40, 0, 0xFF, time & 0xFF);
-        setData(42, 0, 0x07, time >> 8);
-        return 0;
-    }
+    /**
+     * Set the date.  Used by send().
+    **/
+    int setDate(int month, int day, int hour, int min);
+
+    /**
+     * Set the current time.  Used by send().
+    **/
+    int setTime(int hour, int min);
 
     // Only can set one byte. Do data bit reverse inside.  Used for data in integer.
-    void setData(int byteIdx, int bitOffset, unsigned char bitmask, unsigned char out_) {
-        unsigned char out = bitReverse(out_);
-        const int idx = byteIdx - 1;
-        unsigned char tmp = data[idx];
-        data[idx] &= ~bitmask >> bitOffset;
-        data[idx] |= out >> bitOffset;
-    }
+    void setReverse(int byteIdx, uint8 bitmask, uint8 out);
+    void set(int byteIdx, uint8 bitmask, uint8 out);
 };
 
 #endif  // HITACHI_AC_H
