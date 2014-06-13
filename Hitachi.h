@@ -4,6 +4,11 @@
 #ifndef HITACHI_AC_H
 #define HITACHI_AC_H
 
+#ifndef uint8
+#define uint8 unsigned char
+#endif
+
+
 /**
  * MASK has already shifted and offseted.
  * For data which is more than 8 byte, SHIFT indicate how to cut the date into half.
@@ -63,7 +68,7 @@ enum {
     BIRGHTNESS_HALF = 0x01,  // Half bightness
     BIRGHTNESS_ONOFF = 0x03,  // Only show machine on/off.
     BIRGHTNESS_NO = 0x02,  // No display
-    BIRGHTNESS_NO_MASK = 0x03,
+    BIRGHTNESS_MASK = 0x03,
     KEEP_MOISTURE_LOW = 0x40,
     KEEP_MOISTURE_HIGH = 0x50,
     KEEP_MOISTURE_OFF = 0x00,
@@ -90,7 +95,7 @@ enum {
     WIND_SPEED_3 = 0x0C,
     WIND_SPEED_2 = 0x04,
     WIND_SPEED_1 = 0x08,
-    WIND_MASK = 0xE0,
+    WIND_SPEED_MASK = 0xE0,
 
     FUNCTION_BYTE = 26,
 };
@@ -122,18 +127,21 @@ enum {
 };
 
 enum {
-    POWER_ON = 0x08,
-    POWER_OFF = 0x00,
+    POWER_ON = 0x8F,
+    POWER_OFF = 0x87,
 
     POWER_BYTE = 28,
-    POWER_MASK = 0x08,
+    POWER_MASK = 0xFF,
 };
 
 enum {
-    TEMPERATURE_MASK = 0x3F;
-    TEMPERATURE_OFFSET = 3;
-    TEMPERATURE_BYTE = 14;
+    TEMPERATURE_MASK = 0xFF,  // 3F
+    TEMPERATURE_OFFSET = 2,
+    TEMPERATURE_BYTE = 14,
+
+    TEMPERATURE_AUTO_0 = 4,
 };
+
 
 enum {
     DATA_MONTH_BYTE = 30,
@@ -185,13 +193,6 @@ struct HitachiAC {
     uint8 timeLi;  // 43
 };
 
-// bitreverse do MSB->LSB.  For example 10011111 -> 11111001
-uint8 bitReverse(register uint8 x) {
-    x = (((x & 0xaa) >> 1) | ((x & 0x55) << 1));
-    x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
-    return((x >> 4) | (x << 4));
-}
-
 union HitachiACUnion {
     uint8 data[43];
     struct HitachiAC code;
@@ -199,8 +200,19 @@ union HitachiACUnion {
     HitachiACUnion();
 
     int setFunction(uint8 function);
-    int setTemperature(uint8 degree);
-
+    void setTemperature(uint8 degree);
+    void setWindLR(uint8 lr);
+    void setWindUD(uint8 ud);
+    void setWindSpeed(uint8 ws);
+    void setBrightness(uint8 brightness);
+    void setKeepMoisture(uint8 km);
+    void setMouldProof(uint8 mp);
+    void setPowerReturn(uint8 pr);
+    void cleanAllSchedule();
+    int setSleep(int hour, int min);
+    int setClose(int hour, int min);
+    int setOpen(int hour, int min);
+    void setPower(bool on);
 
     /**
      * After modify all the bytes (except the date & time).  Call this to send.
@@ -221,7 +233,7 @@ union HitachiACUnion {
     /**
      * Set the date.  Used by send().
     **/
-    int setDate(int month, int day, int hour, int min);
+    int setDate(int month, int day);
 
     /**
      * Set the current time.  Used by send().
@@ -229,8 +241,16 @@ union HitachiACUnion {
     int setTime(int hour, int min);
 
     // Only can set one byte. Do data bit reverse inside.  Used for data in integer.
-    void setReverse(int byteIdx, uint8 bitmask, uint8 out);
+    void setReverse(int byteIdx, uint8 bitmask, uint8 out, int offset = 0);
     void set(int byteIdx, uint8 bitmask, uint8 out);
+
+
+    // bitreverse do MSB->LSB.  For example 10011111 -> 11111001
+    uint8 bitReverse(register uint8 x) {
+        x = (((x & 0xaa) >> 1) | ((x & 0x55) << 1));
+        x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
+        return((x >> 4) | (x << 4));
+    }
 };
 
 #endif  // HITACHI_AC_H
