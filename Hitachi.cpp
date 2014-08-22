@@ -49,27 +49,33 @@ void HitachiACUnion::setWindLR(uint8 lr) {
 }
 
 void HitachiACUnion::setWindUD(uint8 ud) {
-    set(WBKMP_BYTE, WIND_UD_MASK, ud);
+    set(WIND_UD_BYTE, WIND_UD_MASK, ud);
 }
 
 void HitachiACUnion::setWindSpeed(uint8 ws) {
-    set(WBKMP_BYTE, WIND_SPEED_MASK, ws);
+    set(WIND_SPEED_BYTE, WIND_SPEED_MASK, ws);
+    if (ws == WIND_SPEED_1)
+        setFastCool(FAST_SILENT);
+}
+
+void HitachiACUnion::setFastCool(uint8 fast) {
+    set(FAST_BYTE, FAST_MASK, fast);
 }
 
 void HitachiACUnion::setBrightness(uint8 brightness) {
-    set(WBKMP_BYTE, BIRGHTNESS_MASK, brightness);
+    set(BIRGHTNESS_BYTE, BIRGHTNESS_MASK, brightness);
 }
 
 void HitachiACUnion::setKeepMoisture(uint8 km) {
-    set(WBKMP_BYTE, KEEP_MOISTURE_MASK, km);
+    set(KEEP_MOISTURE_BYTE, KEEP_MOISTURE_MASK, km);
 }
 
 void HitachiACUnion::setMouldProof(uint8 mp) {
-    set(WBKMP_BYTE, MOULD_PROOF_MASK, mp);
+    set(MOULD_PROOF_BYTE, MOULD_PROOF_MASK, mp);
 }
 
 void HitachiACUnion::setPowerReturn(uint8 pr) {
-    set(WBKMP_BYTE, POWER_RETURN_MASK, pr);
+    set(POWER_RETURN_BYTE, POWER_RETURN_MASK, pr);
 }
 
 void HitachiACUnion::cleanAllSchedule() {

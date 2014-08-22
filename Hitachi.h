@@ -48,6 +48,14 @@ enum {
 };
 
 enum {
+    FAST_FAST = 0x69,
+    FAST_NORMAL = 0x49,
+    FAST_SILENT = 0x19,
+    FAST_BYTE = 10,
+    FAST_MASK = 0xFF,
+}
+
+enum {
     WIND_LR_AUTO = 0x00,
     WIND_LR_R2 = 0x80,  // larger angel
     WIND_LR_R1 = 0x40,
@@ -63,24 +71,31 @@ enum {
 enum {
     WIND_UD_SWING = 0x04,
     WIND_UD_NOT_SWING = 0x00,
+    WIND_UD_BYTE = 38,
     WIND_UD_MASK = 0x04,
+
     BIRGHTNESS_FULL = 0x00,  // Full bightness
     BIRGHTNESS_HALF = 0x01,  // Half bightness
     BIRGHTNESS_ONOFF = 0x03,  // Only show machine on/off.
     BIRGHTNESS_NO = 0x02,  // No display
+    BIRGHTNESS_BYTE = 38,
     BIRGHTNESS_MASK = 0x03,
+
     KEEP_MOISTURE_LOW = 0x40,
     KEEP_MOISTURE_HIGH = 0x50,
     KEEP_MOISTURE_OFF = 0x00,
+    KEEP_MOISTURE_BYTE = 38,
     KEEP_MOISTURE_MASK = 0x50,
+
     MOULD_PROOF_ON = 0x20,
     MOULD_PROOF_OFF = 0x00,
+    MOULD_PROOF_BYTE = 38,
     MOULD_PROOF_MASK = 0x20,
+
     POWER_RETURN_ON = 0x08,
     POWER_RETURN_OFF = 0x00,
+    POWER_RETURN_BYTE = 38,
     POWER_RETURN_MASK = 0x08,
-
-    WBKMP_BYTE = 38,
 };
 
 enum {
@@ -89,15 +104,18 @@ enum {
     FUNCTION_WIND = 0x80,
     FUNCTION_AUTO_CONTROL = 0xE0,
     FUNCTION_COLD = 0xC0,
+
+    FUNCTION_BYTE = 26,
     FUNCTION_MASK = 0xE0,  // Each function has one bit of difference.
+
     WIND_SPEED_AUTO = 0x0A,
     WIND_SPEED_4 = 0x02,
     WIND_SPEED_3 = 0x0C,
     WIND_SPEED_2 = 0x04,
-    WIND_SPEED_1 = 0x08,
-    WIND_SPEED_MASK = 0xE0,
+    WIND_SPEED_1 = 0x08,  // Silence
 
-    FUNCTION_BYTE = 26,
+    WIND_SPEED_BYTE = 26,
+    WIND_SPEED_MASK = 0xE0,
 };
 
 enum {
